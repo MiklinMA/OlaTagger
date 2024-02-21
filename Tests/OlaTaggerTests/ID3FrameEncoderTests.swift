@@ -1,13 +1,13 @@
 import XCTest
 import OlaTagger
 
-final class ID3FrameEncoderTests: XCTestCase {
+public final class ID3FrameEncoderTests: XCTestCase {
 
-    override func setUpWithError() throws {
+    public override func setUpWithError() throws {
         continueAfterFailure = false
     }
 
-    override func tearDownWithError() throws {
+    public override func tearDownWithError() throws {
     }
 
     func check(encoder: OlaTagger.ID3.Frame.Encoder) throws {
@@ -34,16 +34,16 @@ final class ID3FrameEncoderTests: XCTestCase {
         }
     }
 
-    func test_encoder_iso() throws {
+    public func test_encoder_iso() throws {
         try check(encoder: ID3.Frame.Encoder.iso)
     }
-    func test_encoder_utf8() throws {
+    public func test_encoder_utf8() throws {
         try check(encoder: ID3.Frame.Encoder.utf8)
     }
-    func test_encoder_utf16() throws {
+    public func test_encoder_utf16() throws {
         try check(encoder: ID3.Frame.Encoder.utf16)
     }
-    func test_encoder_utf16be() throws {
+    public func test_encoder_utf16be() throws {
         try check(encoder: ID3.Frame.Encoder.utf16be)
     }
 }
