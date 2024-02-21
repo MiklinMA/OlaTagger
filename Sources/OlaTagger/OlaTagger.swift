@@ -61,22 +61,28 @@ public struct ID3 {
             frames.append(frame)
         }
     }
-    public mutating func write() throws {
-        if frames.isEmpty { return }
+    public mutating func write(keepFields: Bool = true) throws {
+        if keepFields {
+            if frames.isEmpty { return }
 
-        let changed = frames
-        self.load()
-        frames.merge(changed)
+            let changed = frames
+            self.load()
+            frames.merge(changed)
+        }
 
         let size = headerSize + Int(size)
         guard let current = try? Data(contentsOf: url) else { return }
-        let data = Data(encode() + Array(current.dropFirst(size)))
+        let data = Data(encode(shrink: !keepFields) + Array(current.dropFirst(size)))
         try data.write(to: url)
     }
-    mutating func encode() -> UData {
+    mutating func encode(shrink: Bool = false) -> UData {
         let size = frames.size
-        if self.size < size {
-            self.size = size + UInt32(paddingSize)
+        if shrink {
+            self.size = size
+        } else {
+            if self.size < size {
+                self.size = size + UInt32(paddingSize)
+            }
         }
         let tail = Int(self.size) - Int(size)
 
