@@ -12,7 +12,7 @@ extension ID3.Frame {
     public struct Lyrics: ID3FrameValue {
         public let value: String?
         public let data: Data? = nil
-        public var size: UInt32
+        public var size: UInt32 { UInt32(encode().count) }
 
         private var encoder: Encoder = .utf16
         var language: String = "eng"
@@ -21,13 +21,13 @@ extension ID3.Frame {
         public init(_ value: String, language: String? = nil,
              description: String? = nil, encoding: Encoder? = nil)
         {
-            if let language { self.language = language }
+            if var language {
+                while language.count < 3 { language += "\0" }
+                self.language = String(language.prefix(3))
+            }
             if let description { self.description = description }
             if let encoding { self.encoder = encoding }
             self.value = value
-
-            size = 0
-            size = UInt32(encode().count)
         }
         public init?(_ orig: UData) {
             var data = orig
@@ -48,8 +48,6 @@ extension ID3.Frame {
 
             guard let value = encoder.toString(data: &data) else { return nil }
             self.value = value
-
-            self.size = UInt32(orig.count)
         }
         public func encode() -> UData {
             var result = [encoder.rawValue] 

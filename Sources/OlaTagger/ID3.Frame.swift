@@ -14,7 +14,6 @@ extension ID3 {
 
         public let id = UUID()
         let tag: Tag
-        private(set) var major: UInt8 = 4
         public let value: (any Value)
 
         let flags: Flags
@@ -26,15 +25,13 @@ extension ID3 {
 }
 
 extension ID3.Frame {
-    init(tag: Tag, value: any Value, major: UInt8? = nil) {
+    init(tag: Tag, value: any Value) {
         self.tag = tag
         self.name = tag.rawValue
         self.value = value
         self.flags = Flags()
-        if let major { self.major = major }
     }
-    init?(data orig: inout UData, major: UInt8? = nil) {
-        if let major { self.major = major }
+    init?(data orig: inout UData, major: UInt8) {
         var data = orig
 
         guard data.count >= headerSize,
@@ -45,7 +42,7 @@ extension ID3.Frame {
         data.removeFirst(4)
 
         // v2.4 frame size
-        let (prefix, shift): (Int?, Int?) = switch self.major {
+        let (prefix, shift): (Int?, Int?) = switch major {
         // case 2: (3, 8)
         case 3: (4, 8)
         case 4: (4, 7)
@@ -68,12 +65,12 @@ extension ID3.Frame {
 
         orig = Array(data.dropFirst(Int(size)))
     }
-    func encode() -> UData? {
+    func encode(major: UInt8) -> UData? {
         let valueData = value.encode()
         if valueData.isEmpty { return nil }
 
         var result = name.chars
-        result += self.major == 3 ? size.toUInt8 : size.toUInt7
+        result += major == 3 ? size.toUInt8 : size.toUInt7
         result += flags.toUint8
         result += valueData
         return result
@@ -94,8 +91,8 @@ extension ID3.Frames {
     var size: UInt32 {
         reduce(0, { $0 + $1.headerSize + $1.size })
     }
-    func encode() -> UData {
-        compactMap { $0.encode() }.reduce(UData(), +)
+    func encode(major: UInt8) -> UData {
+        compactMap { $0.encode(major: major) }.reduce(UData(), +)
     }
     mutating func merge(_ source: ID3.Frames) {
         source.forEach { self[$0.tag] = $0 }

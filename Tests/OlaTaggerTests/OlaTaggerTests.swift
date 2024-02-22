@@ -1,65 +1,179 @@
 @testable import OlaTagger
 import XCTest
 
-let testData: UData = [
-    0x49, 0x44, 0x33, 0x03, 0x00, 0x00, 0x00, 0x00, 0x01, 0x1A, 0x54, 0x49, 0x54, 0x32, 0x00, 0x00,
-    0x00, 0x1F, 0x00, 0x00, 0x01, 0xFF, 0xFE, 0x1D, 0x04, 0x30, 0x04, 0x37, 0x04, 0x32, 0x04, 0x30,
-    0x04, 0x3D, 0x04, 0x38, 0x04, 0x35, 0x04, 0x20, 0x00, 0x42, 0x04, 0x40, 0x04, 0x35, 0x04, 0x3A,
-    0x04, 0x30, 0x04, 0x54, 0x50, 0x45, 0x31, 0x00, 0x00, 0x00, 0x19, 0x00, 0x00, 0x01, 0xFF, 0xFE,
-    0x18, 0x04, 0x41, 0x04, 0x3F, 0x04, 0x3E, 0x04, 0x3B, 0x04, 0x3D, 0x04, 0x38, 0x04, 0x42, 0x04,
-    0x35, 0x04, 0x3B, 0x04, 0x4C, 0x04, 0x54, 0x41, 0x4C, 0x42, 0x00, 0x00, 0x00, 0x23, 0x00, 0x00,
-    0x01, 0xFF, 0xFE, 0x1D, 0x04, 0x30, 0x04, 0x37, 0x04, 0x32, 0x04, 0x30, 0x04, 0x3D, 0x04, 0x38,
-    0x04, 0x35, 0x04, 0x20, 0x00, 0x30, 0x04, 0x3B, 0x04, 0x4C, 0x04, 0x31, 0x04, 0x3E, 0x04, 0x3C,
-    0x04, 0x30, 0x04, 0x41, 0x50, 0x49, 0x43, 0x00, 0x00, 0x00, 0x17, 0x00, 0x00, 0x01, 0x69, 0x6D,
-    0x61, 0x67, 0x65, 0x2F, 0x00, 0x04, 0xFF, 0xFE, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05,
-    0x06, 0x07, 0x08, 0x09
-]
-
 
 final class OlaTaggerTests: XCTestCase {
-    var url = URL.temporaryDirectory.appending(component: UUID().description)
-    let size = UInt32(testData.count - 10)
+    var url: URL!
+    var size: UInt32!
+
+    let title = "Название трека"
+    let artist = "Исполнитель"
+    let album = "Название альбома"
+    let artwork = ID3.Frame.Artwork(
+        Data(Array(0..<10).map { UInt8($0) }),
+        mime: "test/data",
+        type: .covba,
+        description: "Последовательность"
+    )
+    let lyrics = ID3.Frame.Lyrics(
+        """
+        Мороз и солнце, день чудесный
+        Еще ты дремлешь, друг прелестный
+        """,
+        language: "ru",
+        description: "Стихи",
+        encoding: .utf8
+    )
 
     override func setUpWithError() throws {
         continueAfterFailure = false
 
-        try Data(testData).write(to: url)
+        // url = URL.temporaryDirectory.appending(component: UUID().description)
+        url = URL(filePath: "/tmp/test.mp3")
+        // FileManager.default.createFile(atPath: url.path(), contents: nil)
+        try Data([0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA]).write(to: url)
+        try create_frames()
     }
 
     override func tearDownWithError() throws {
         try FileManager.default.removeItem(at: url)
     }
 
-    // func test_modify_header() throws {
-    //     var header: OlaTagger.ID3
-    //     // let path = "/Users/bear/Desktop/01 - I Saw Her Standing There.mp3"
-    //     let path = "/tmp/04 - Красная шапочка.mp3"
-    //     let newPath = path.replacing(".mp3", with: " copy.mp3")
-    //     try? FileManager.default.trashItem(at: URL(filePath: newPath), resultingItemURL: nil)
-    //     try FileManager.default.copyItem(atPath: path, toPath: newPath)
-    //     header = OlaTagger.ID3(url: URL(filePath: newPath))!
-    //     print(header.size)
-    //     // header.load()
-    //     header[.title] = ID3.Frame.OneLine("Название трека", encoding: .utf16)
-    //     header[.artist] = ID3.Frame.OneLine("Исполнитель", encoding: .utf16)
-    //     header[.album] = ID3.Frame.OneLine("Название альбома", encoding: .utf16)
-    //     header[.artwork] = ID3.Frame.Artwork(
-    //         Data(Array(0..<10).map { UInt8($0) }),
-    //         mime: "image/",
-    //         type: .covba
-    //     )
-    //     try! header.write(keepFields: false)
-    //     header.frames.forEach { print("\($0.name) \($0.size)") }
-    //     return
-    // }
+    func create_frames() throws {
+        var header = ID3(url: url)!
+        header[.title] = ID3.Frame.OneLine(title, encoding: .utf8)
+        header[.artist] = ID3.Frame.OneLine(artist, encoding: .utf16)
+        header[.album] = ID3.Frame.OneLine(album, encoding: .utf16be)
+        header[.artwork] = artwork
+        header[.lyrics] = lyrics
+        try header.write()
+        size = header.size
+    }
+
     func test_read_header() throws {
         let header = ID3(url: url)!
         XCTAssertEqual(header.url, url)
         XCTAssertEqual(header.marker, "ID3")
-        XCTAssertEqual(header.major, 3)
+        XCTAssertEqual(header.major, 4)
         XCTAssertEqual(header.minor, 0)
-        XCTAssertEqual(header.flags, ID3.Flags(0))
+        XCTAssertEqual(header.flags, 0)
         XCTAssertEqual(header.size, size)
         XCTAssertEqual(header.frames.count, 0, "Should be empty before loading")
+    }
+    func test_load_frames() throws {
+        var header = ID3(url: url)!
+        header.load()
+        XCTAssertEqual(header.frames.count, 5)
+        XCTAssertEqual(header[.title]?.value, title)
+        XCTAssertEqual(header[.artist]?.value, artist)
+        XCTAssertEqual(header[.album]?.value, album)
+
+        guard let artwork = header[.artwork] as? ID3.Frame.Artwork else {
+            return XCTFail("Could not cast artwork frame to ID3.Frame.Artwork")
+        }
+        XCTAssertEqual(artwork.mime, self.artwork.mime)
+        XCTAssertEqual(artwork.type, self.artwork.type)
+        XCTAssertEqual(artwork.description, self.artwork.description)
+        XCTAssertEqual(artwork.data, self.artwork.data)
+
+        guard let lyrics = header[.lyrics] as? ID3.Frame.Lyrics else {
+            return XCTFail("Could not cast lyrics frame to ID3.Frame.Lyrics")
+        }
+        XCTAssertEqual(lyrics.language, self.lyrics.language)
+        XCTAssertEqual(lyrics.description, self.lyrics.description)
+        XCTAssertEqual(lyrics.value, self.lyrics.value)
+    }
+    func test_seek_frame_title() throws {
+        let header = ID3(url: url)!
+        XCTAssertEqual(header[.title]?.value, title)
+    }
+    func test_seek_frame_artist() throws {
+        let header = ID3(url: url)!
+        XCTAssertEqual(header[.artist]?.value, artist)
+    }
+    func test_seek_frame_album() throws {
+        let header = ID3(url: url)!
+        XCTAssertEqual(header[.album]?.value, album)
+    }
+    func test_seek_frame_artwork() throws {
+        let header = ID3(url: url)!
+        guard let artwork = header[.artwork] as? ID3.Frame.Artwork else {
+            return XCTFail("Could not cast artwork frame to ID3.Frame.Artwork")
+        }
+        XCTAssertEqual(artwork.mime, self.artwork.mime)
+        XCTAssertEqual(artwork.type, self.artwork.type)
+        XCTAssertEqual(artwork.description, self.artwork.description)
+        XCTAssertEqual(artwork.data, self.artwork.data)
+    }
+    func test_seek_frame_lyrics() throws {
+        let header = ID3(url: url)!
+        guard let lyrics = header[.lyrics] as? ID3.Frame.Lyrics else {
+            return XCTFail("Could not cast lyrics frame to ID3.Frame.Lyrics")
+        }
+        XCTAssertEqual(lyrics.language, self.lyrics.language)
+        XCTAssertEqual(lyrics.description, self.lyrics.description)
+        XCTAssertEqual(lyrics.value, self.lyrics.value)
+    }
+    func test_changing_version() throws {
+        var header = ID3(url: url)!
+        header.load()
+        header.major = 3
+        header.minor = 1
+        try header.write(keepFields: false)
+
+        header = ID3(url: url)!
+        XCTAssertEqual(header.major, 3)
+        XCTAssertEqual(header.minor, 1)
+
+        XCTAssertEqual(header[.artist]?.value, artist)
+    }
+    func test_padding_empty() throws {
+        var artwork = artwork
+        artwork.description = ""
+
+        // clear the header
+        var header = ID3(url: url)!
+        try header.write(keepFields: false)
+
+        XCTAssertEqual(header.size, header.frames.size)
+        XCTAssertEqual(header.frames.size, 0)
+
+        // add padding
+        artwork.data = Data(Array(0..<8).map { UInt8($0) })
+        header[.artwork] = artwork
+        try header.write()
+
+        XCTAssertEqual(header.size, header.frames.size + UInt32(header.paddingSize))
+
+        // fill padding
+        let paddingSize = header.size
+        (0..<header.paddingSize).forEach { _ in
+            artwork.data?.append(contentsOf: [0xFF])
+            header[.artwork] = artwork
+            try! header.write()
+
+            XCTAssertEqual(header.size, paddingSize)
+        }
+
+        // extend padding
+        artwork.data?.append(contentsOf: [0xFF])
+        header[.artwork] = artwork
+        try header.write()
+        XCTAssertEqual(header.size, header.frames.size + UInt32(header.paddingSize))
+    }
+
+
+    func test_existing_file() throws {
+        var header: OlaTagger.ID3
+        let path = "/tmp/01 - I Saw Her Standing There.mp3"
+        let newPath = path.replacing(".mp3", with: " copy.mp3")
+        try? FileManager.default.trashItem(at: URL(filePath: newPath), resultingItemURL: nil)
+        try FileManager.default.copyItem(atPath: path, toPath: newPath)
+
+        header = OlaTagger.ID3(url: URL(filePath: newPath))!
+        header[.title] = ID3.Frame.OneLine("Название трека", encoding: .utf16)
+        header[.artist] = ID3.Frame.OneLine("Исполнитель", encoding: .utf16)
+        header[.album] = ID3.Frame.OneLine("Название альбома", encoding: .utf16)
+        try header.write(keepFields: false)
     }
 }

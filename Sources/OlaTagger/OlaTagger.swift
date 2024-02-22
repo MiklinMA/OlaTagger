@@ -12,25 +12,33 @@ public typealias UData = [UInt8]
 
 public struct ID3 {
     let url: URL
+    private var found: Bool = false
     let marker: String = "ID3"
-    let major: UInt8
-    let minor: UInt8
-    let flags: Flags
-    public var size: UInt32
+    var major: UInt8 = 4
+    var minor: UInt8 = 0
+    var flags: Flags = 0
+    public var size: UInt32 = 0
 
-    private var data: UData
-    private let headerSize = 10
-    private let paddingSize = 16
+    private var data: UData = []
+    let headerSize = 10
+    let paddingSize: Int
     public var frames: Frames = Frames()
 
-    public init?(url: URL) {
+    public init?(url: URL, paddingSize: Int = 128) {
         self.url = url
+        self.paddingSize = paddingSize
         guard let immutable = try? Data(contentsOf: url) else { return nil }
-        var data = immutable.prefix(headerSize).map { UInt8($0) }
+        loadHeader(immutable)
+    }
 
+    mutating func loadHeader(_ immutable: Data) {
+        var data = immutable.prefix(headerSize).map { UInt8($0) }
         guard data.count >= headerSize,
               Array(data.prefix(3)) == Array(marker.utf8)
-        else { return nil }
+        else {
+            found = false
+            return
+        }
         data.removeFirst(3)
 
         major = data[0]
@@ -39,10 +47,9 @@ public struct ID3 {
         data.removeFirst(3)
 
         size = data.prefix(4).reduce(0) { ($0 << 7) | UInt32($1) }
-        print("\(size) \(data.prefix(4).description)")
         data.removeFirst(4)
 
-        // maybe later
+        // TODO: maybe later
         // if flags.exhead {
         //     let size = data.prefix(4).reduce(0) { ($0 << 7) | UInt32($1) }
         // }
@@ -51,6 +58,8 @@ public struct ID3 {
             .dropFirst(headerSize)
             .prefix(Int(size))
             .map { UInt8($0) }
+
+        found = true
     }
     public mutating func load() {
         frames = Frames()
@@ -70,10 +79,15 @@ public struct ID3 {
             frames.merge(changed)
         }
 
-        let size = headerSize + Int(size)
+        let skipID3 = found ? headerSize + Int(size) : 0
+
         guard let current = try? Data(contentsOf: url) else { return }
-        let data = Data(encode(shrink: !keepFields) + Array(current.dropFirst(size)))
+        let encoded = encode(shrink: !keepFields)
+
+        let data = Data(encoded) + current.dropFirst(skipID3)
         try data.write(to: url)
+
+        loadHeader(data)
     }
     mutating func encode(shrink: Bool = false) -> UData {
         let size = frames.size
@@ -88,7 +102,7 @@ public struct ID3 {
 
         return (
             marker.chars + [major, minor, flags] + self.size.toUInt7 +
-            frames.encode() +
+            frames.encode(major: major) +
             Array(0..<tail).map { _ in UInt8(0) }
         )
     }
@@ -113,7 +127,7 @@ public struct ID3 {
                 frames[tag] = nil
                 return
             }
-            let frame = Frame(tag: tag, value: newValue, major: major)
+            let frame = Frame(tag: tag, value: newValue)
             frames[tag] = frame
         }
     }
