@@ -13,9 +13,6 @@
   },
   "testTargets" : [
     {
-      "skippedTests" : [
-        "OlaTaggerTests\/test_existing_file()"
-      ],
       "target" : {
         "containerPath" : "container:",
         "identifier" : "OlaTaggerTests",

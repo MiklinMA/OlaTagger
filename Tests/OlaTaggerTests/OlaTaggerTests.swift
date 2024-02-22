@@ -163,6 +163,7 @@ final class OlaTaggerTests: XCTestCase {
     }
 
 
+    /*
     func test_existing_file() throws {
         var header: OlaTagger.ID3
         let path = "/tmp/01 - I Saw Her Standing There.mp3"
@@ -176,4 +177,5 @@ final class OlaTaggerTests: XCTestCase {
         header[.album] = ID3.Frame.OneLine("Название альбома", encoding: .utf16)
         try header.write(keepFields: false)
     }
+    */
 }
