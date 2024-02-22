@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "C539D65E-6095-4E87-A846-8289FACA37AE",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "OlaTaggerTests",
+        "name" : "OlaTaggerTests"
+      }
+    }
+  ],
+  "version" : 1
+}
