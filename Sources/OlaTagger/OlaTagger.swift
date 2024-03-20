@@ -107,6 +107,8 @@ public struct ID3 {
         )
     }
     private func seek(name: String) -> Int? {
+        if data.count < 4 { return nil }
+
         for i in 0..<(data.count - 4) {
             if Array(data[i..<i + 4]) == name.chars {
                 return i
