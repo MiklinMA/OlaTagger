@@ -24,6 +24,11 @@ final class OlaTaggerTests: XCTestCase {
         description: "Стихи",
         encoding: .utf8
     )
+    let popm = ID3.Frame.Popularimeter(
+        "ru.olasoft.OlaTagger",
+        rating: 255,
+        counter: 4294967295
+    )
 
     override func setUpWithError() throws {
         continueAfterFailure = false
@@ -46,6 +51,7 @@ final class OlaTaggerTests: XCTestCase {
         header[.album] = ID3.Frame.OneLine(album, encoding: .utf16be)
         header[.artwork] = artwork
         header[.lyrics] = lyrics
+        header[.popm] = popm
         try header.write()
         size = header.size
     }
@@ -63,7 +69,7 @@ final class OlaTaggerTests: XCTestCase {
     func test_load_frames() throws {
         var header = ID3(url: url)!
         header.load()
-        XCTAssertEqual(header.frames.count, 5)
+        XCTAssertEqual(header.frames.count, 6)
         XCTAssertEqual(header[.title]?.value, title)
         XCTAssertEqual(header[.artist]?.value, artist)
         XCTAssertEqual(header[.album]?.value, album)
@@ -113,6 +119,15 @@ final class OlaTaggerTests: XCTestCase {
         XCTAssertEqual(lyrics.language, self.lyrics.language)
         XCTAssertEqual(lyrics.description, self.lyrics.description)
         XCTAssertEqual(lyrics.value, self.lyrics.value)
+    }
+    func test_seek_frame_popm() throws {
+        let header = ID3(url: url)!
+        guard let popm = header[.popm] as? ID3.Frame.Popularimeter else {
+            return XCTFail("Could not cast POPM frame to ID3.Frame.Popularimeter")
+        }
+        XCTAssertEqual(popm.email, self.popm.email)
+        XCTAssertEqual(popm.rating, self.popm.rating)
+        XCTAssertEqual(popm.counter, self.popm.counter)
     }
     func test_changing_version() throws {
         var header = ID3(url: url)!

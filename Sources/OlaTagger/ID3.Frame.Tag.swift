@@ -15,6 +15,7 @@ extension ID3.Frame {
         case artist = "TPE1"
         case artwork = "APIC"
         case lyrics = "USLT"
+        case popm = "POPM"
 
         case other = "UNKN"
 
@@ -25,6 +26,7 @@ extension ID3.Frame {
             case .artist: OneLine(data)
             case .artwork: Artwork(data)
             case .lyrics: Lyrics(data)
+            case .popm: Popularimeter(data)
             default: Unknown(data)
             }
         }
@@ -35,6 +37,7 @@ extension ID3.Frame {
             case .artist: (value as? OneLine) != nil
             case .artwork: (value as? Artwork) != nil
             case .lyrics: (value as? Lyrics) != nil
+            case .popm: (value as? Popularimeter) != nil
             default: false
             }
         }
