@@ -14,9 +14,9 @@ extension ID3.Frame {
         public var data: Data? = nil
         public var size: UInt32 { UInt32(encode().count) }
 
-        var email: String
-        var rating: UInt8 = 0
-        var counter: UInt32 = 0
+        public var email: String
+        public var rating: UInt8 = 0
+        public var counter: UInt32 = 0
 
         public init(_ value: String, rating: UInt8? = nil, counter: UInt32? = nil) {
             self.email = value

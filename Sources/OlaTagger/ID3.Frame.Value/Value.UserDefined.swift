@@ -15,7 +15,7 @@ extension ID3.Frame {
         public var size: UInt32 { UInt32(encode().count) }
 
         private var encoder: Encoder = .utf16
-        var description: String = ""
+        public var description: String = ""
 
         public init(_ value: String, description: String? = nil, encoding: Encoder? = nil) {
             if let description { self.description = description }
