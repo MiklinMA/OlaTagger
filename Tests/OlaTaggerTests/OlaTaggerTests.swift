@@ -29,6 +29,11 @@ final class OlaTaggerTests: XCTestCase {
         rating: 255,
         counter: 4294967295
     )
+    let custom = ID3.Frame.UserDefined(
+        "123-456-789",
+        description: "CATALOGNUMBER",
+        encoding: .utf16
+    )
 
     override func setUpWithError() throws {
         continueAfterFailure = false
@@ -52,6 +57,7 @@ final class OlaTaggerTests: XCTestCase {
         header[.artwork] = artwork
         header[.lyrics] = lyrics
         header[.popm] = popm
+        header[.custom] = custom
         try header.write()
         size = header.size
     }
@@ -69,7 +75,7 @@ final class OlaTaggerTests: XCTestCase {
     func test_load_frames() throws {
         var header = ID3(url: url)!
         header.load()
-        XCTAssertEqual(header.frames.count, 6)
+        XCTAssertEqual(header.frames.count, 7)
         XCTAssertEqual(header[.title]?.value, title)
         XCTAssertEqual(header[.artist]?.value, artist)
         XCTAssertEqual(header[.album]?.value, album)
@@ -128,6 +134,14 @@ final class OlaTaggerTests: XCTestCase {
         XCTAssertEqual(popm.email, self.popm.email)
         XCTAssertEqual(popm.rating, self.popm.rating)
         XCTAssertEqual(popm.counter, self.popm.counter)
+    }
+    func test_seek_frame_custom() throws {
+        let header = ID3(url: url)!
+        guard let custom = header[.custom] as? ID3.Frame.UserDefined else {
+            return XCTFail("Could not cast TXX frame to ID3.Frame.UserDefined")
+        }
+        XCTAssertEqual(custom.description, self.custom.description)
+        XCTAssertEqual(custom.value, self.custom.value)
     }
     func test_changing_version() throws {
         var header = ID3(url: url)!

@@ -16,6 +16,7 @@ extension ID3.Frame {
         case artwork = "APIC"
         case lyrics = "USLT"
         case popm = "POPM"
+        case custom = "TXXX"
 
         case other = "UNKN"
 
@@ -27,6 +28,7 @@ extension ID3.Frame {
             case .artwork: Artwork(data)
             case .lyrics: Lyrics(data)
             case .popm: Popularimeter(data)
+            case .custom: UserDefined(data)
             default: Unknown(data)
             }
         }
@@ -38,6 +40,7 @@ extension ID3.Frame {
             case .artwork: (value as? Artwork) != nil
             case .lyrics: (value as? Lyrics) != nil
             case .popm: (value as? Popularimeter) != nil
+            case .custom: (value as? UserDefined) != nil
             default: false
             }
         }
